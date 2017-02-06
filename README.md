@@ -16,7 +16,7 @@ Programs have been tested on Matlab 2016a. [Matconvnet](http://www.vlfeat.org/ma
     3. Training
         * When training is necessary, please first finish step 2 data augmentation.
         * Please copy  docking_imdb.mat  obtained by augmentation to './data/'. Copy proposals_train.mat and proposals_test.mat to './data/SSW/'.
-        * Please run './Train_and_Test_program/fast_rcnn_train.m'.
+        * Please run './Train_and_Test_program/train.m'.
         * The model after training is named by 'net-deployed.mat' and saved in './data/'
 
 
