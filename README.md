@@ -1,6 +1,6 @@
 # Dock-net
 This is the implementation of our work - 'Learning Deep Representations and Detection of Docking Stations Using Underwater Imaging'.
-##Prerequisite: Programs have been tested on Matlab 2016a. And (Matconvnet)[http://www.vlfeat.org/matconvnet/] ims neccessary to run this work.
+##Prerequisite: Programs have been tested on Matlab 2016a. And [Matconvnet](http://www.vlfeat.org/matconvnet/) ims neccessary to run this work.
 ##Run the code:
 	1. Test
 		* Please run './Train_and_Test_program/my_detection_test_demo.m'. 
