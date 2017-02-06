@@ -1,0 +1,243 @@
+function my_fast_rcnn_demo_generatevedio_171121(varargin)
+%this function is used to generate iamges results of underwater
+%detection,then run frames2video2.m generate video
+%date: 17.1.21
+%the detection results will be saved in '../test_samples/results'
+
+
+run(fullfile(fileparts(mfilename('fullpath')), ...
+    '..', '..', 'matlab', 'vl_setupnn.m')) ;
+
+addpath(fullfile(vl_rootnn,'examples','fast_rcnn','bbox_functions')) ;
+
+opts.modelPath = '' ;
+opts.classes = {'foreground'} ;
+opts.gpu = [] ;
+
+opts.confThreshold = 0.01;
+
+opts.nmsThreshold = 0.3 ;
+%opts.nmsThreshold = 0 ;
+
+%opts.imdbpath='../../data/my_fast_rcnn_data/myimdb_size84m60_fastrcnn161214_aug.mat';
+%opts.imdbpath='../../../data/my_fast_rcnn_data/myimdb_size84m60_fastrcnn161214jitter2_aug.mat';
+%opts.imdbpath='../../../data/my_fast_rcnn_data/myimdb_size84m60_fastrcnn161231strongintensity.mat';
+%opts.imdbpath='../../../data/my_fast_rcnn_data/myimdb_size84m60_fastrcnn161114.mat';
+%opts.imdbpath='../../../data/my_fast_rcnn_data/myimdb_size84m60_fastrcnn161120_aug.mat';
+
+%opts.imdbpath='../../../data/my_fast_rcnn_data/myimdb_size84m60_fastrcnndocking_auvcamera170114.mat';
+%insecthresh=iouthresh;%overlap threshhold 161221
+correct_num=0;
+
+opts = vl_argparse(opts, varargin) ;
+
+% Load or download the Fast RCNN model
+paths = {opts.modelPath, ...
+    './fast-rcnn-vgg16-dagnn.mat', ...
+    fullfile(vl_rootnn, 'data', 'models', 'fast-rcnn-vgg16-pascal07-dagnn.mat'), ...
+    fullfile(vl_rootnn, 'data', 'models-import', 'fast-rcnn-vgg16-pascal07-dagnn.mat')} ;
+ok = min(find(cellfun(@(x)exist(x,'file'), paths))) ;
+
+if isempty(ok)
+    fprintf('Downloading the Fast RCNN model ... this may take a while\n') ;
+    opts.modelPath = fullfile(vl_rootnn, 'data', 'models', 'fast-rcnn-vgg16-pascal07-dagnn.mat') ;
+    mkdir(fileparts(opts.modelPath)) ;
+    urlwrite('http://www.vlfeat.org/matconvnet/models/fast-rcnn-vgg16-pascal07-dagnn.mat', ...
+        opts.modelPath) ;
+else
+    opts.modelPath = paths{ok} ;
+end
+%opts.modelPath='../../data/my_fast_rcnn_data/net-deployed-test.mat';
+%opts.modelPath='../../../data/my_fast_rcnn_data/net-deployed.mat';
+%opts.modelPath='../../../data/my_fast_rcnn_data/net-deployed.mat';
+opts.modelPath='../data/models/net-10.mat';
+%opts.modelPath='../../../data/my_fast_rcnn_data/net-deployed-transfer-fixlayer7.mat';
+
+
+%test data path
+pth='../test_samples/test_datasets';
+forefiles=[dir([pth '/*.jpg'])];
+forefilesn=numel(forefiles);
+forefileList=cell(forefilesn,1);
+
+for i=1:forefilesn
+    forefileList{i}=forefiles(i).name;
+end
+
+
+
+
+
+
+
+%testidx=find(imdb.images.set==3);
+% Load the network and put it in test mode.
+net = load(opts.modelPath) ;
+net = dagnn.DagNN.loadobj(net);
+net.mode = 'test' ;
+
+% Mark class and bounding box predictions as `precious` so they are
+% not optimized away during evaluation.
+%net.vars(net.getVarIndex('cls_prob')).precious = 1 ;
+%net.vars(net.getVarIndex('bbox_pred')).precious = 1 ;
+%for testi=1:numel(testidx)
+for testi=1:forefilesn
+%for testi=900:900
+    %for testi=220:230
+    % Load a test image and candidate bounding boxes.
+    %im = single(imread('VTS_01_1_1.mp420161026T14564041932.jpg')) ;
+    %testfilename=imdb.images.name{testidx(testi)};
+    %im = single(imread([imdb.imageDir '/' testfilename])) ;
+    %strtmp=forefiles(i).name ;
+    filename=forefileList{testi};
+    
+    if(filename=='VTS_01_1_1.mp420161026T1447186979.jpg')
+        filename
+    end
+    
+    im=single(imread([pth '/' filename]));
+    %im = single(imread('fore-VTS_01_1_1.mp420161012T1707264601.jpg')) ;
+    im=imresize(im,[64 80]);
+    imo = im; % keep original image
+    boxes=Selectivesearchwrapper(im);
+    %boxes = load('000004_boxes.mat') ;
+    
+    
+    
+    %170121 if boxes proposals are too big to be the whole image, delete it
+    box_del_record=[];%record which col should be deleted
+    for boxesi=1:size(boxes,1)%find invalid box
+        if((boxes(boxesi,4)-boxes(boxesi,2)>size(im,2)-5)&&(boxes(boxesi,3)-boxes(boxesi,1)>size(im,1)-5))
+            box_del_record=[box_del_record,boxesi];
+        end
+    end
+    
+    %delete invalid box
+    boxes(box_del_record,:)=[];
+    
+    if(isempty(boxes))
+        disp(['empty proposal in' filename]);
+        f=figure;imshow(im/255);
+        axis image;
+        axis off;
+        set(gcf, 'Color', 'white');
+        set(gcf,'outerposition',get(0,'screensize'));
+        %from figure axes to image
+        F=getframe(gca);
+        Image=frame2im(F);imwrite(Image,['/home/liushuang/Desktop/video/' filename '.jpg']);
+        close(f);
+        continue;
+    end
+    
+    % Transpose XY in proposals
+    for i=1:size(boxes,1)
+        %boxes{i} = boxes{i}(:,[2 1 4 3]);
+        boxes(i,:) = boxes(i,[2 1 4 3]);
+    end
+    
+    
+    %draw proposals
+    %figure;imshow(im/255);
+    % hold on;
+    % for i=1:size(boxes,1)
+    %     display_bbox_updownpoint=boxes(i,:);
+    %     rectangle('Position',[display_bbox_updownpoint(1:2) display_bbox_updownpoint(3)-display_bbox_updownpoint(1) display_bbox_updownpoint(4)-display_bbox_updownpoint(2)],'Edgecolor',rand(1,3));
+    % end
+    % hold off;
+    
+    
+    boxes = single(boxes') + 1 ;
+    boxeso = boxes - 1; % keep original boxes
+    
+    
+    
+    
+    % Resize images and boxes to a size compatible with the network.
+    % imageSize = size(im) ;
+    % fullImageSize = net.meta.normalization.imageSize(1) ...
+    %     / net.meta.normalization.cropSize ;
+    % scale = max(fullImageSize ./ imageSize(1:2)) ;
+    % im = imresize(im, scale, ...
+    %               net.meta.normalization.interpolation, ...
+    %               'antialiasing', false) ;
+    % boxes = bsxfun(@times, boxes - 1, scale) + 1 ;
+    
+    % Remove the average color from the input image.
+    imNorm = bsxfun(@minus, im, net.meta.normalization.averageImage) ;
+    
+    % Convert boxes into ROIs by prepending the image index. There is only
+    % one image in this batch.
+    rois = [ones(1,size(boxes,2)) ; boxes] ;
+    
+    % Evaluate network either on CPU or GPU.
+    if numel(opts.gpu) > 0
+        gpuDevice(opts.gpu) ;
+        imNorm = gpuArray(imNorm) ;
+        rois = gpuArray(rois) ;
+        net.move('gpu') ;
+    end
+    
+    net.conserveMemory = false ;
+    %net.eval({'data', imNorm, 'rois', rois});
+    net.eval({'input', imNorm, 'rois', rois});
+    
+    % Extract class probabilities and  bounding box refinements
+    %probs = squeeze(gather(net.vars(net.getVarIndex('cls_prob')).value)) ;
+    probs = squeeze(gather(net.vars(net.getVarIndex('probcls')).value)) ;
+    %deltas = squeeze(gather(net.vars(net.getVarIndex('bbox_pred')).value)) ;
+    deltas = squeeze(gather(net.vars(net.getVarIndex('predbbox')).value)) ;
+    
+    % Visualize results for one class at a time
+    for i = 1:numel(opts.classes)
+        c = find(strcmp(opts.classes{i}, net.meta.classes.name)) ;
+        cprobs = probs(c,:) ;
+        cdeltas = deltas(4*(c-1)+(1:4),:)' ;
+        cboxes = bbox_transform_inv(boxeso', cdeltas);
+        cls_dets = [cboxes cprobs'] ;
+        
+        keep = bbox_nms(cls_dets, opts.nmsThreshold) ;
+        cls_dets = cls_dets(keep, :) ;%cls_dets:(i,1:4) is calculated boundingbox [point1col point1row point2col point2row] of ROIi;(i,5) is prob of ROIi
+        
+        sel_boxes = find(cls_dets(:,end) >= opts.confThreshold) ;
+        
+        %         imo = bbox_draw(imo/255,cls_dets(sel_boxes,:));
+        %         title(sprintf('Detections for class ''%s''', opts.classes{i})) ;
+        %
+        %         fprintf('Detections for category ''%s'':\n', opts.classes{i});
+        
+        %my calculate accuracy:
+        %         if(testi==11)
+        %             testi
+        %             imo = bbox_draw(imo/255,cls_dets(sel_boxes,:));
+        %             title(sprintf('Detections for class ''%s''', opts.classes{i})) ;
+        %             fprintf('Detections for category ''%s'':\n', opts.classes{i});
+        %         end
+        %bin_res = My_cal_iou_accuracy( cls_dets(sel_boxes,:),imdb.boxes.gtbox{testidx(testi)},insecthresh);
+        my_draw_detection_res(im, cls_dets(sel_boxes,:),filename);
+        %correct_num=correct_num+bin_res;
+        %draw proposal/ground truth
+        %   hold on;
+        %   for proi=1:size(sel_boxes,1)
+        %      %myboxesT=boxes';
+        %
+        %     myboxesT=imdb.boxes.gtbox{testidx(testi)};
+        %     %display_bbox_updownpoint=myboxesT(sel_boxes(proi),:);
+        %     display_bbox_updownpoint=myboxesT;
+        %     rectangle('Position',[display_bbox_updownpoint(1:2) display_bbox_updownpoint(3)-display_bbox_updownpoint(1) display_bbox_updownpoint(4)-display_bbox_updownpoint(2)],'Edgecolor','b');
+        %   end
+        %   hold off;
+        
+        
+        %   for j=1:size(sel_boxes,1)
+        %     bbox_id = sel_boxes(j,1);
+        %     fprintf('\t(%.1f,%.1f)\t(%.1f,%.1f)\tprobability=%.6f\n', ...
+        %             cls_dets(bbox_id,1), cls_dets(bbox_id,2), ...
+        %             cls_dets(bbox_id,3), cls_dets(bbox_id,4), ...
+        %             cls_dets(bbox_id,end));
+        %   end
+    end
+    
+    
+    
+end
+%detec_accu=correct_num/numel(testidx)
