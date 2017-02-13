@@ -1,22 +1,4 @@
 function [imo,rois] = fast_rcnn_eval_get_batch(images, imdb, batch, opts)
-% FAST_RCNN_GET_BATCH_EVAL Load, preprocess, and pack images for CNN
-% evaluation
-
-% opts.numFgRoisPerImg = 128;
-% opts.numRoisPerImg = 64;
-% opts.maxScale = 1000;
-% opts.bgLabel = 21;
-% opts.visualize = 1;
-% opts.scale = 600;
-% opts.interpolation = 'bicubic';
-% opts.averageImage = [];
-% opts.numThreads = 2;
-%
-% Copyright (C) 2016 Hakan Bilen.
-% All rights reserved.
-%
-% This file is part of the VLFeat library and is made available under
-% the terms of the BSD license (see the COPYING file).
 
 if isempty(images)
   imo = [] ;

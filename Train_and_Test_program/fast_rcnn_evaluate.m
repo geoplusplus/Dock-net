@@ -1,11 +1,4 @@
 function [aps, speed] = fast_rcnn_evaluate(varargin)
-%FAST_RCNN_EVALUATE  Evaluate a trained Fast-RCNN model on PASCAL VOC 2007
-
-% Copyright (C) 2016 Hakan Bilen.
-% All rights reserved.
-%
-% This file is part of the VLFeat library and is made available under
-% the terms of the BSD license (see the COPYING file).
 
 run(fullfile(fileparts(mfilename('fullpath')), ...
   '..', '..', 'matlab', 'vl_setupnn.m')) ;

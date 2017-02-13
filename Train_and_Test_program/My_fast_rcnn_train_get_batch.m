@@ -1,22 +1,4 @@
 function [imo,rois,labels,targets] = My_fast_rcnn_train_get_batch(images, imdb, batch, opts)
-% FAST_RCNN_GET_BATCH_TRAIN  Generates mini-batches for Fast-RCNN train
-
-% opts.numFgRoisPerImg = 128;
-% opts.numRoisPerImg = 64;
-% opts.maxScale = 1000;
-% opts.bgLabel = 21;
-% opts.visualize = 0;
-% opts.scale = 600;
-% opts.interpolation = 'bicubic';
-% opts.averageImage = [];
-% opts.numThreads = 2;
-% opts.prefetch = true;
-%
-% Copyright (C) 2016 Hakan Bilen.
-% All rights reserved.
-%
-% This file is part of the VLFeat library and is made available under
-% the terms of the BSD license (see the COPYING file).
 
 if isempty(images)
   imo = [] ;
